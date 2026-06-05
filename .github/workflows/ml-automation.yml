@@ -21,7 +21,7 @@ jobs:
 
       - name: Run MLflow Project (Training)
         run: |
-          mlflow run Workflow-CI/MLProject --experiment-name "Workflow_CI_Experiment" --env-manager local
+          python Workflow-CI/MLProject/modelling.py --n_estimators 100 --max_depth 10
 
       - name: Upload Model Artifact to GitHub
         uses: actions/upload-artifact@v4
