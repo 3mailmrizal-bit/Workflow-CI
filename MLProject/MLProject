@@ -1,8 +1,6 @@
-name: Proyek_Workflow_CI_Rizal
+name: Workflow-CI-MLProject
 
-# Menggunakan environment virtualenv/pip lokal bawaan runner
-venv:
-  package_manager: pip
+conda_env: conda.yaml
 
 entry_points:
   main:

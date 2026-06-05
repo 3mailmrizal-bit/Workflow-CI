@@ -1,11 +1,11 @@
-name: workflow_ci_env
+name: mlflow-ci-env
 channels:
   - defaults
 dependencies:
-  - python=3.10
+  - python=3.12
   - pip
   - pip:
-      - mlflow
-      - dagshub
-      - pandas
-      - scikit-learn
+    - mlflow
+    - pandas
+    - scikit-learn
+    - numpy

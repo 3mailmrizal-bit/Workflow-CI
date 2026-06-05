@@ -14,21 +14,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12.7'
+          python-version: '3.12'
 
-      - name: Install dependencies
-        run: pip install mlflow pandas scikit-learn docker
+      - name: Install MLflow
+        run: pip install mlflow
 
+      # ✅ PERBAIKAN: Gunakan mlflow run sesuai struktur folder
       - name: Run MLflow Project (Training)
-        working-directory: MLProject
         run: |
-          python modelling.py --n_estimators 100 --max_depth 10
+          mlflow run MLProject \
+            --experiment-name "Workflow_CI_Experiment" \
+            --env-manager local \
+            -P n_estimators=100 \
+            -P max_depth=10
 
       - name: Upload Model Artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: model-hasil-training
-          path: MLProject/mlruns/
+          path: mlruns/
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -40,14 +44,12 @@ jobs:
         run: |
           MODEL_PATH=$(find . -name "MLmodel" -exec dirname {} \; | head -n 1)
           echo "Model path ditemukan di: $MODEL_PATH"
-
+          
           if [ -z "$MODEL_PATH" ]; then
-            echo "Error: Model tidak ditemukan! Pastikan step training berhasil."
+            echo "Error: Model tidak ditemukan!"
             exit 1
           fi
-
-          echo "FROM ${{ secrets.DOCKER_USER }}/msml-model:latest" > Dockerfile_Final
-          echo "EXPOSE 5000" >> Dockerfile_Final
+          
           mlflow models build-docker -m "$MODEL_PATH" -n "${{ secrets.DOCKER_USER }}/msml-model:latest"
 
       - name: Push Docker Image
