@@ -1,0 +1,55 @@
+name: CI-MLflow-Workflow-Docker
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  train-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.7'
+
+      - name: Install dependencies
+        run: pip install mlflow pandas scikit-learn docker
+
+      - name: Run MLflow Project (Training)
+        run: |
+          mlflow run Workflow-CI/MLProject --experiment-name "Workflow_CI_Experiment" --env-manager local
+
+      - name: Upload Model Artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-hasil-training
+          path: mlruns/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Build Docker Image
+        run: |
+          MODEL_PATH=$(find mlruns -name "MLmodel" -exec dirname {} \;)
+          
+          echo "Model path ditemukan di: $MODEL_PATH"
+          
+          # 2. Pastikan path ditemukan
+          if [ -z "$MODEL_PATH" ]; then
+            echo "Error: Model tidak ditemukan!"
+            exit 1
+          fi
+          echo "FROM ${{ secrets.DOCKER_USER }}/msml-model:latest" > Dockerfile_Final
+          echo "EXPOSE 5000" >> Dockerfile_Final
+          mlflow models build-docker -m "$MODEL_PATH" -n "${{ secrets.DOCKER_USER }}/msml-model:latest"
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USER }}/msml-model:latest
